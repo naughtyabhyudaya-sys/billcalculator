@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rent & Utilities Calculator (NPR)</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121730;
+      --panel-2: #0f142a;
+      --text: #eaf0ff;
+      --muted: #98a2b3;
+      --accent: #8b5cf6;
+      --accent-2: #22d3ee;
+      --bad: #ef4444;
+      --good: #10b981;
+      --ring: #3b82f6;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 20% -10%, #172044 0%, #0b1020 50%, #060912 100%);
+      color: var(--text);
+    }
+    .container {
+      max-width: 900px; margin: 40px auto; padding: 24px; border-radius: 20px; background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      box-shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.06);
+    }
+    h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: .2px; }
+    .subtitle { margin: 0 0 22px; color: var(--muted); font-size: 14px; }
+
+    form { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+
+    .field { grid-column: span 6; display: flex; flex-direction: column; }
+    .field.small { grid-column: span 3; }
+    .field.full { grid-column: 1 / -1; }
+    label { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+    input[type="number"], input[type="text"], select {
+      width: 100%; padding: 12px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03); color: var(--text);
+      outline: none; transition: box-shadow .2s ease, border-color .2s ease, transform .06s ease;
+    }
+    input:focus, select:focus { box-shadow: 0 0 0 4px rgba(59,130,246,.25); border-color: var(--ring); }
+
+    .row { display:flex; align-items:center; gap:12px; }
+    .switch { position: relative; width: 48px; height: 28px; background: rgba(255,255,255,.15); border-radius: 999px; cursor: pointer; transition: background .2s;
+      flex: 0 0 auto; border:1px solid rgba(255,255,255,.1); }
+    .switch::after { content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition: transform .2s; }
+    .switch.on { background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%); }
+    .switch.on::after { transform: translateX(20px); }
+
+    .actions { grid-column: 1 / -1; display: flex; gap: 12px; margin-top: 4px; }
+    button { padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.08); color: var(--text); cursor: pointer; font-weight: 600; }
+    button.primary { background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%); border: none; }
+    button.secondary { background: transparent; }
+
+    .cards { margin-top: 18px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+    .card { grid-column: span 6; background: rgba(255,255,255,.03); border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,.06); }
+    .card.full { grid-column: 1 / -1; }
+    .card h3 { margin: 0 0 10px; font-size: 16px; color: #c5d0ff; }
+    .kv { display:flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px dashed rgba(255,255,255,.08); }
+    .kv:last-child { border-bottom: none; }
+
+    .note { color: var(--muted); font-size: 12px; margin-top: 8px; }
+    .error { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.35); color: #fecaca; padding: 10px 12px; border-radius: 12px; }
+    .success { background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.35); color: #bbf7d0; padding: 10px 12px; border-radius: 12px; }
+
+    .footer { margin-top: 18px; display:flex; justify-content: space-between; align-items:center; color: var(--muted); font-size: 12px; }
+    .footer a { color: #cbd5ff; text-decoration: none; }
+
+    @media (max-width: 720px){
+      .field, .field.small, .card { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Rent & Utilities Calculator</h1>
+    <p class="subtitle">Quickly split electricity (including shared motor) and optional Wi‑Fi. Currency: NPR.</p>
+
+    <form id="calcForm" novalidate>
+      <div class="field small">
+        <label for="prevMain">Previous main meter unit</label>
+        <input id="prevMain" type="number" inputmode="decimal" step="0.01" placeholder="e.g., 1450" required>
+      </div>
+      <div class="field small">
+        <label for="currMain">Current main meter unit</label>
+        <input id="currMain" type="number" inputmode="decimal" step="0.01" placeholder="e.g., 1525" required>
+      </div>
+
+      <div class="field small">
+        <label for="prevMotor">Previous motor meter unit</label>
+        <input id="prevMotor" type="number" inputmode="decimal" step="0.01" placeholder="e.g., 2000" required>
+      </div>
+      <div class="field small">
+        <label for="currMotor">Current motor meter unit</label>
+        <input id="currMotor" type="number" inputmode="decimal" step="0.01" placeholder="e.g., 2100" required>
+      </div>
+
+      <div class="field small">
+        <label for="motorUsers">People using the motor (to split)</label>
+        <input id="motorUsers" type="number" inputmode="numeric" step="1" min="1" placeholder="e.g., 3" required>
+      </div>
+
+      <div class="field small">
+        <label for="rate">Electricity rate (NPR per unit)</label>
+        <input id="rate" type="number" inputmode="decimal" step="0.01" min="0" placeholder="e.g., 12.50" required>
+      </div>
+
+      <div class="field full">
+        <label>Do you use Wi‑Fi?</label>
+        <div class="row">
+          <div id="wifiSwitch" class="switch" role="switch" aria-checked="false" tabindex="0"></div>
+          <span id="wifiLabel">No</span>
+          <input id="wifiFee" type="number" inputmode="decimal" step="1" min="0" max="200" placeholder="Wi‑Fi fee (max 200)" style="margin-left:auto; max-width: 220px; display:none;">
+        </div>
+        <p class="note">If enabled, a Wi‑Fi fee (capped at NPR 200) will be added to <em>your</em> bill.</p>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="primary">Calculate</button>
+        <button type="button" id="resetBtn" class="secondary">Reset</button>
+        <button type="button" id="printBtn" class="secondary">Print / Save PDF</button>
+      </div>
+
+      <div class="field full" id="messageArea" style="display:none;"></div>
+    </form>
+
+    <div class="cards" id="resultArea" style="display:none;">
+      <div class="card">
+        <h3>Usage</h3>
+        <div class="kv"><span>Main units used</span><strong id="mainUnits">—</strong></div>
+        <div class="kv"><span>Motor units total</span><strong id="motorUnits">—</strong></div>
+        <div class="kv"><span>Your share of motor units</span><strong id="motorShareUnits">—</strong></div>
+      </div>
+      <div class="card">
+        <h3>Costs</h3>
+        <div class="kv"><span>Main electricity cost</span><strong id="mainCost">—</strong></div>
+        <div class="kv"><span>Motor cost (your share)</span><strong id="motorCost">—</strong></div>
+        <div class="kv"><span>Wi‑Fi fee</span><strong id="wifiCost">—</strong></div>
+      </div>
+      <div class="card full">
+        <h3>Total to Pay</h3>
+        <div class="kv"><span>Total (NPR)</span><strong id="grandTotal" style="font-size:22px;">—</strong></div>
+        <p class="note">Formula: <code>(MainUnits × Rate)</code> + <code>(MotorUnits ÷ MotorUsers × Rate)</code> + <code>Wi‑Fi (≤ 200)</code>.</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Tip: Use the Print button to export this page as PDF for records.</span>
+      <a href="#" id="prefill">Prefill sample</a>
+    </div>
+  </div>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+    const money = (n) => `NPR ${Number(n).toFixed(2)}`;
+
+    const wifiSwitch = el('wifiSwitch');
+    const wifiLabel = el('wifiLabel');
+    const wifiFee = el('wifiFee');
+
+    function setWifi(on){
+      wifiSwitch.classList.toggle('on', !!on);
+      wifiSwitch.setAttribute('aria-checked', !!on);
+      wifiLabel.textContent = on ? 'Yes' : 'No';
+      wifiFee.style.display = on ? 'block' : 'none';
+      if(on && !wifiFee.value) wifiFee.value = 200;
+    }
+
+    wifiSwitch.addEventListener('click', () => setWifi(!wifiSwitch.classList.contains('on')));
+    wifiSwitch.addEventListener('keydown', (e)=>{ if(e.key===' '||e.key==='Enter'){ e.preventDefault(); setWifi(!wifiSwitch.classList.contains('on')); }});
+
+    el('prefill').addEventListener('click', (e)=>{
+      e.preventDefault();
+      el('prevMain').value = 1450; el('currMain').value = 1525;
+      el('prevMotor').value = 2000; el('currMotor').value = 2100;
+      el('motorUsers').value = 3; el('rate').value = 12.5;
+      setWifi(true); wifiFee.value = 200;
+      document.getElementById('calcForm').dispatchEvent(new Event('submit'));
+    });
+
+    el('resetBtn').addEventListener('click', ()=>{ document.getElementById('calcForm').reset(); setWifi(false); el('resultArea').style.display='none'; el('messageArea').style.display='none'; });
+    el('printBtn').addEventListener('click', ()=> window.print());
+
+    function showMessage(kind, msg){
+      const box = el('messageArea');
+      box.className = kind === 'error' ? 'error' : 'success';
+      box.textContent = msg; box.style.display = 'block';
+    }
+
+    document.getElementById('calcForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      // Read inputs
+      const prevMain = parseFloat(el('prevMain').value);
+      const currMain = parseFloat(el('currMain').value);
+      const prevMotor = parseFloat(el('prevMotor').value);
+      const currMotor = parseFloat(el('currMotor').value);
+      const motorUsers = parseInt(el('motorUsers').value, 10);
+      const rate = parseFloat(el('rate').value);
+      const wifiOn = wifiSwitch.classList.contains('on');
+      let wifi = 0;
+      if(wifiOn){
+        const raw = parseFloat(wifiFee.value || '0');
+        wifi = Math.min(Math.max(raw, 0), 200); // cap at 200
+        wifiFee.value = wifi; // reflect cap
+      }
+
+      // Validate
+      const errors = [];
+      function isNum(x){ return Number.isFinite(x); }
+      if(!isNum(prevMain) || !isNum(currMain)) errors.push('Enter valid main meter readings.');
+      if(!isNum(prevMotor) || !isNum(currMotor)) errors.push('Enter valid motor meter readings.');
+      if(!isNum(rate) || rate < 0) errors.push('Enter a valid electricity rate (NPR per unit).');
+      if(!Number.isInteger(motorUsers) || motorUsers < 1) errors.push('Motor users must be at least 1.');
+
+      if(errors.length === 0){
+        if(currMain < prevMain) errors.push('Current main meter must be ≥ previous.');
+        if(currMotor < prevMotor) errors.push('Current motor meter must be ≥ previous.');
+      }
+
+      if(errors.length){
+        showMessage('error', errors.join(' '));
+        el('resultArea').style.display = 'none';
+        return;
+      }
+
+      // Compute
+      const mainUnits = currMain - prevMain;
+      const motorUnits = currMotor - prevMotor;
+      const motorShareUnits = motorUnits / motorUsers;
+
+      const mainCost = mainUnits * rate;
+      const motorCost = motorShareUnits * rate;
+      const total = mainCost + motorCost + wifi;
+
+      // Fill UI
+      el('mainUnits').textContent = mainUnits.toFixed(2);
+      el('motorUnits').textContent = motorUnits.toFixed(2);
+      el('motorShareUnits').textContent = motorShareUnits.toFixed(2);
+
+      el('mainCost').textContent = money(mainCost);
+      el('motorCost').textContent = money(motorCost);
+      el('wifiCost').textContent = money(wifi);
+      el('grandTotal').textContent = money(total);
+
+      el('resultArea').style.display = 'grid';
+      showMessage('success', 'Calculation complete. Review the breakdown below.');
+    });
+
+    // Initialize state
+    setWifi(false);
+  </script>
+</body>
+</html>
